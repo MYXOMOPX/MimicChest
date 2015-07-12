@@ -24,7 +24,7 @@ class MimicChestEater extends MimicChestPart{
     private final Location teleportLocation
     private TriggerContainer eatingContainer
     private boolean isOpen = false;
-    private double eatItemChance = 0.2;
+    private double eatItemChance = 0.5;
 
     private Player eatenPlayer
     private GameMode eatenPlayerGameMode;
@@ -57,12 +57,7 @@ class MimicChestEater extends MimicChestPart{
         eatingContainer.interval(20){ // 1 second
             awakener.damage(0.5)
             if (Math.random() < eatItemChance ){
-                def items = awakener.items.findAll {it != null}
-                def itemStack = items.rnd()
-                if (itemStack == null) return
-                eatItem(itemStack)
-                def slot = awakener.inventory.first(itemStack)
-                awakener.inventory.clear(slot)
+                eatPlayerItem()
             }
         }
 
@@ -79,8 +74,37 @@ class MimicChestEater extends MimicChestPart{
 
     }
 
-    private Player getEatenPlayer(){
-        return eatenPlayer
+    private void eatPlayerItem(){
+        Inventory inv = eatenPlayer.inventory
+        List<Integer> slots = []
+        def contents = inv.contents
+        for (int i = 0; i < contents.size(); i++){
+            if (contents[i] != null) slots.add(i)
+        }
+        if (eatenPlayer.helmet) slots.add(-4)
+        if (eatenPlayer.armor) slots.add(-3)
+        if (eatenPlayer.legs) slots.add(-2)
+        if (eatenPlayer.boots) slots.add(-1)
+        if (!slots) return
+        def slot = slots.rnd()
+        ItemStack itemStack;
+        if (slot == -4) {
+            itemStack = eatenPlayer.helmet
+            eatenPlayer.helmet = null
+        } else if (slot == -3) {
+            itemStack = eatenPlayer.armor
+            eatenPlayer.armor = null
+        } else if (slot == -2) {
+            itemStack = eatenPlayer.legs
+            eatenPlayer.legs = null
+        } else if (slot == -1) {
+            itemStack = eatenPlayer.boots
+            eatenPlayer.boots = null
+        } else {
+            itemStack = contents[slot]
+            inv.setItem(slot,null)
+        }
+        eatItem(itemStack)
     }
 
     private void onInvClick(InventoryClickEvent event){

@@ -29,11 +29,13 @@ class MimicChestAttacker extends MimicChestPart{
         if (params["health"]) health = params["health"] as double
         else health = maxHealth
         if (params["maxAttackDelay"]) maxAttackDelay = params["maxAttackDelay"] as int
+        else maxAttackDelay = 40
         if (params["scanRadius"]) scanRadius = params["scanRadius"] as double
         else scanRadius = 12
         if (params["displayAttackZone"]) displayAttackZone = params["displayAttackZone"] as boolean
         else displayAttackZone = false
 
+        attackDelay = maxAttackDelay
         attackLocation = block.loc.add(0.5,1.2,0.5)
         attackContainer = container.generator()
         mount.world.playSound(mount,Sound.GHAST_SCREAM  ,2,1)
@@ -98,8 +100,8 @@ class MimicChestAttacker extends MimicChestPart{
         return maxHealth-health
     }
 
-    private long maxAttackDelay = 40;
-    private long attackDelay = 40;
+    private final long maxAttackDelay
+    private long attackDelay
     private SphereRegion canBreakBlockSphere; // sphere where players can break chest
 
 
@@ -261,6 +263,7 @@ class MimicChestAttacker extends MimicChestPart{
         openChest()
         attackContainer.timeout(5){
             closeChest()
+            attackContainer.timeout(attackDelay,this.&attack)
             def loc = (player.eye | player.location)
             def vector = loc-attackLocation
             def stepCount = vector.length()/fireThrowerStep*2
@@ -269,7 +272,6 @@ class MimicChestAttacker extends MimicChestPart{
             trigger = attackContainer.interval(1){int iteration ->
                 if (iteration >= stepCount) {
                     trigger.stop()
-                    attackContainer.timeout(attackDelay,this.&attack)
                     return
                 }
                 MimicUtils.playParticle(currentLoc,"FLAME",new Vector(0.3,0.3,0.3),0 as float,10)

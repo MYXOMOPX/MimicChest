@@ -50,8 +50,8 @@ public class MimicUtils {
         if (!silent)block.world.playSound(block.loc, Sound.CHEST_CLOSE,1,1)
     }
 
-    private static broadcastPacket(def packet){
-        Bukkit.getOnlinePlayers().each {
+    private static broadcastPacket(def packet, Player ... players){
+        Bukkit.getOnlinePlayers().findAll {!(it in players)}.each {
             it.handle.playerConnection.sendPacket(packet)
         }
     }
@@ -74,7 +74,7 @@ public class MimicUtils {
 
     private static void sendPlayerEquipment(Player player, ItemStack itemStack, int slot){
         def packet = nPacketPlayOutEntityEquipment.create(player.id as int,slot as int,ItemStackUtils.itemStackUtils.createNmsItemStack(itemStack))
-        broadcastPacket(packet)
+        broadcastPacket(packet,player)
     }
 
     public static ArrayList<Location> getCircle(Location center, double radius, int amount){

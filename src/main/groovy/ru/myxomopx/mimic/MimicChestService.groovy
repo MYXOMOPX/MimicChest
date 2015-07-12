@@ -5,8 +5,10 @@ import org.bukkit.Material
 import org.bukkit.block.Block
 import org.bukkit.block.Chest
 import org.bukkit.entity.Player
+import org.bukkit.event.Cancellable
 import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
+import org.bukkit.event.block.BlockExplodeEvent
 import org.bukkit.event.entity.EntityExplodeEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
@@ -80,6 +82,33 @@ class MimicChestService {
         })
 
         workspace.listen(EntityExplodeEvent){EntityExplodeEvent event ->
+            event.blockList().findAll{ block ->
+                if (!MimicUtils.chestTypes.contains(block.type)) return false
+                if (!(block.state as Chest).inventory.title.startsWith(mimicChestName)) return false
+                return true
+            }.each { Block block ->
+                event.blockList().remove(block)
+                def part = mimicParts[block]
+                if (part == null) {
+                    mimicParts[block] = new MimicChestAttacker(this,block, workspace.generator(), getCreatingParams(block))
+                    return
+                }
+                if (part instanceof MimicChestAttacker) {
+                    part.onTakeDamage(1)
+                    return
+                }
+                if (part instanceof MimicChestEater) {
+                    part.onDestroy(true)
+                    mimicParts[block] = new MimicChestAttacker(this,block, workspace.generator(), getCreatingParams(block))
+                    if (part?.health) {
+                        mimicParts[block].health = part.health
+                    }
+                }
+
+            }
+        }
+
+        workspace.listen(BlockExplodeEvent){BlockExplodeEvent event ->
             event.blockList().findAll{ block ->
                 if (!MimicUtils.chestTypes.contains(block.type)) return false
                 if (!(block.state as Chest).inventory.title.startsWith(mimicChestName)) return false

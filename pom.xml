@@ -6,12 +6,18 @@
 
     <groupId>ru.myxomopx.mimic</groupId>
     <artifactId>MimicChest</artifactId>
-    <version>1.0</version>
+    <version>1.1</version>
+
+    <!--<properties>-->
+        <!--<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>-->
+        <!--<bintray.repo>maven</bintray.repo>-->
+        <!--<bintray.package>MimicChest</bintray.package>-->
+    <!--</properties>-->
 
     <distributionManagement>
         <repository>
             <id>bintray</id>
-            <url>https://api.bintray.com/maven/MYXOMOPX/maven/${artifactId}</url>
+            <url>https://api.bintray.com/content/myxomopx/maven/${artifactId}/${version}/</url>
         </repository>
     </distributionManagement>
 
