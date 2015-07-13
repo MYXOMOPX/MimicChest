@@ -1,5 +1,6 @@
 package ru.myxomopx.mimic
 
+import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.block.Block
@@ -12,6 +13,7 @@ import org.bukkit.event.block.BlockExplodeEvent
 import org.bukkit.event.entity.EntityExplodeEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
+import org.json.simple.JSONValue
 import org.json.simple.parser.JSONParser
 import ru.dpohvar.varscript.workspace.Workspace
 
@@ -68,6 +70,14 @@ class MimicChestService {
             if (!(block.state as Chest).inventory.title.startsWith(mimicChestName)) return
             event.cancelled = true
             def part = mimicParts[block]
+            if (event.player.gameMode == GameMode.CREATIVE) {
+                event.cancelled = false
+                if (part != null) {
+                    part.onDestroy(true)
+                    mimicParts.remove(block)
+                }
+                return
+            }
             if (part instanceof MimicChestAttacker){
                 part.onTakeDamage(1)
                 return
@@ -138,14 +148,24 @@ class MimicChestService {
 
     }
 
-    public ItemStack getMimicItem(){
+
+    public ItemStack getMimicItem(Map config = null){
         def mimicItem = new ItemStack(Material.CHEST)
         def m = mimicItem.itemMeta
         m.displayName = mimicChestName
+        if (config) m.displayName += " " + JSONValue.toJSONString(config)
         mimicItem.itemMeta = m
         return mimicItem
     }
 
+    public Block config(Map<String,?> config, Block block){
+        def state = block.getState()
+        if (!(state instanceof Chest)) return null;
+        def name = mimicChestName
+        if (config != null) name += " " + JSONValue.toJSONString(config)
+        state.chest.a(name)
+        return block
+    }
 
     public MimicChestPart getMimicPart(Block block){
         return mimicParts[block]
