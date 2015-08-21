@@ -200,7 +200,7 @@ class MimicChestService {
         def jsonString = nameParts[1]
         try{
             return parser.parse(jsonString) as Map<String,Object>
-        } catch (Exception e) {
+        } catch (ignored) {
             println("Can't parse mimic params [$block.x:$block.y:$block.z]")
         }
         return [:]
@@ -209,4 +209,9 @@ class MimicChestService {
     public static MimicChestService getInstance(){
         return instance
     }
+
+    public static def getVersion(){
+        return 1.2
+    }
+
 }

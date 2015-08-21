@@ -6,7 +6,7 @@
 
     <groupId>ru.myxomopx.mimic</groupId>
     <artifactId>MimicChest</artifactId>
-    <version>1.1</version>
+    <version>1.2</version>
 
     <!--<properties>-->
         <!--<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>-->
@@ -17,7 +17,7 @@
     <distributionManagement>
         <repository>
             <id>bintray</id>
-            <url>https://api.bintray.com/content/myxomopx/maven/${artifactId}/${version}/</url>
+            <url>https://api.bintray.com/content/myxomopx/maven/${project.artifactId}/${project.version}/</url>
         </repository>
     </distributionManagement>
 
@@ -64,7 +64,7 @@
 
 
     <build>
-        <finalName>${artifactId}</finalName>
+        <finalName>${project.artifactId}</finalName>
 
         <!-- настройка фильтра для ресурсов -->
         <resources>
