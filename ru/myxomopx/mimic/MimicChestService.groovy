@@ -24,6 +24,7 @@ class MimicChestService {
     private static MimicChestService instance;
     private final Workspace workspace;
     private String mimicChestName = "&eMimic".c
+
     HashMap<Block,MimicChestPart> mimicParts = [:]
 
     public MimicChestService(Workspace workspace){
@@ -83,6 +84,7 @@ class MimicChestService {
                 return
             }
             if (part instanceof MimicChestEater) {
+                if (part.isAllergy) return;
                 part.onDestroy(true)
             }
             mimicParts[block] = new MimicChestAttacker(this,block,workspace.generator(),getCreatingParams(block)) // maybe will be other HP
@@ -108,6 +110,7 @@ class MimicChestService {
                     return
                 }
                 if (part instanceof MimicChestEater) {
+                    if (part.isAllergy) return;
                     part.onDestroy(true)
                     mimicParts[block] = new MimicChestAttacker(this,block, workspace.generator(), getCreatingParams(block))
                     if (part?.health) {
@@ -135,6 +138,7 @@ class MimicChestService {
                     return
                 }
                 if (part instanceof MimicChestEater) {
+                    if (part.isAllergy) return;
                     part.onDestroy(true)
                     mimicParts[block] = new MimicChestAttacker(this,block, workspace.generator(), getCreatingParams(block))
                     if (part?.health) {

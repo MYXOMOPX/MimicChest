@@ -38,7 +38,7 @@ class MimicChestAttacker extends MimicChestPart{
         attackDelay = maxAttackDelay
         attackLocation = block.loc.add(0.5,1.2,0.5)
         attackContainer = container.generator()
-        mount.world.playSound(mount,Sound.GHAST_SCREAM  ,2,1)
+        mount.world.playSound(mount,Sound.ENTITY_GHAST_SCREAM  ,2,1)
         scanSphere = mount.sphere(scanRadius)
         canBreakBlockSphere = mount.sphere(5)
 
@@ -62,7 +62,7 @@ class MimicChestAttacker extends MimicChestPart{
 
     public void onTakeDamage(double damage){
         health -= damage
-        mount.world.playSound(mount,Sound.WITHER_HURT,2,0.7 as float)
+        mount.world.playSound(mount,Sound.ENTITY_WITHER_HURT,2,0.7 as float)
 
         def dmg = getTakenDamage()
         if (dmg < 10){
@@ -110,21 +110,18 @@ class MimicChestAttacker extends MimicChestPart{
             it.gameMode in [GameMode.SURVIVAL,GameMode.ADVENTURE] && !it.dead
         }
         if (playersAroundChest.size() > 0){
-            def rnd = Math.floor(Math.random()*5)
+            def rnd = Math.floor(Math.random()*4)
             switch (rnd){
                 case 0:
                     attack_barfZombie()
                     break;
                 case 1:
-                    attack_barfPotion(playersAroundChest.rnd())
-                    break;
-                case 2:
                     attack_launchFireball(playersAroundChest.rnd())
                     break;
-                case 3:
+                case 2:
                     attack_flameThrower(playersAroundChest.rnd())
                     break;
-                case 4:
+                case 3:
                     attack_tongue(playersAroundChest.rnd())
                     break;
             }
@@ -217,13 +214,35 @@ class MimicChestAttacker extends MimicChestPart{
             }
         }
 
+        def tongueShieldDamage = 100;
 
         eatScanTrigger = eatingContainer.interval(1) {
             for (int i = 0; i < tongueLocations.size(); i++){
                 def loc = tongueLocations[i]
                 def players = scanPlayers(loc,tongueRadius)
                 if (players) {
-                    eatingPlayerProcess(players.rnd(),i)
+                    def eatPlayer = players.rnd();
+                    if (eatPlayer.isBlocking()){
+                        eatingContainer.stop()
+                        def mainHand = player.inventory.itemInMainHand;
+                        def offHand = player.inventory.itemInOffHand
+                        if (mainHand.type == Material.SHIELD){
+                            if (mainHand.durability >= mainHand.type.maxDurability-tongueShieldDamage) {
+                                player.inventory.itemInMainHand = null;
+                            } else {
+                                mainHand.durability += tongueShieldDamage
+                            }
+                        } else {
+                            if (offHand.durability >= offHand.type.maxDurability-tongueShieldDamage) {
+                                player.inventory.itemInOffHand = null;
+                            } else {
+                                offHand.durability += tongueShieldDamage
+                            }
+                        }
+                        player.sound(Sound.ENTITY_ITEM_BREAK, 1, 1);
+                    } else {
+                        eatingPlayerProcess(players.rnd(),i)
+                    }
                     break;
                 }
             }
@@ -320,7 +339,7 @@ class MimicChestAttacker extends MimicChestPart{
             MimicUtils.getCircle(mount,1.5,16).each {
                  MimicUtils.playParticle(it,"CLOUD",new Vector(),0.5 as float,5)
             }
-            mount.sound(Sound.BAT_TAKEOFF,1,0.1)
+            mount.sound(Sound.ENTITY_BAT_TAKEOFF,1,0.1)
             targets.each {
                 def vel = (it.loc-mount.loc).normalize()*2
                 vel.setY(0.5)
@@ -337,7 +356,7 @@ class MimicChestAttacker extends MimicChestPart{
         entity >> mount; // TP entity to mount
         openChest(true)
         triggerContainer.timeout(5){
-            mount.sound(Sound.BURP)
+            mount.sound(Sound.ENTITY_PLAYER_BURP)
             entity.setVelocity(barfVector*power)
             closeChest(true)
         }
@@ -369,22 +388,6 @@ class MimicChestAttacker extends MimicChestPart{
             PotionEffectType.SLOW_DIGGING,PotionEffectType.WITHER,PotionEffectType.WITHER,PotionEffectType.WITHER
     ]
 
-    private void attack_barfPotion(Player target){ // DONE
-        openChest()
-        triggerContainer.timeout(5){
-            closeChest()
-            attackContainer.timeout(attackDelay,this.&attack)
-
-            mount.sound(Sound.BURP)
-            def potion = attackLocation.spawn(ThrownPotion)
-            def itemPotion = new ItemStack(Material.POTION)
-            PotionMeta meta = itemPotion.itemMeta as PotionMeta
-            meta.addCustomEffect(new PotionEffect(badEffects.rnd(),Math.random()*100+60 as int,0),true)
-            itemPotion.itemMeta = meta
-            potion.setItem(itemPotion)
-            potion.setVelocity((getPlayerMiddle(target)-potion.loc)*0.7)
-        }
-    }
 
     private void attack_barfTNT(Player target){ // DONE
         openChest()
@@ -392,7 +395,7 @@ class MimicChestAttacker extends MimicChestPart{
             closeChest()
             attackContainer.timeout(attackDelay,this.&attack)
 
-            mount.sound(Sound.BURP)
+            mount.sound(Sound.ENTITY_PLAYER_BURP)
             def tnt = attackLocation.spawn(TNTPrimed)
             tnt.setIsIncendiary(true)
             tnt.yield = 2.2
@@ -457,7 +460,7 @@ class MimicChestAttacker extends MimicChestPart{
     void onDestroy(boolean becauseDestroyed) {
         destroyed = true
         if (becauseDestroyed) {
-            mount.sound(Sound.HORSE_ZOMBIE_DEATH,1,1)
+            mount.sound(Sound.ENTITY_ZOMBIE_HORSE_DEATH,1,1)
             List<ItemStack> items = chest.inventory.contents;
             chest.inventory.clear()
             items.remove(0)

@@ -1,0 +1,1 @@
+service = new ru.myxomopx.mimic.MimicChestService(workspace)
