@@ -5,6 +5,7 @@ import org.bukkit.block.Block
 import org.bukkit.entity.*
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.PotionMeta
+import org.bukkit.potion.PotionData
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.util.Vector
@@ -75,6 +76,7 @@ class MimicChestAttacker extends MimicChestPart{
             attackDelay = maxAttackDelay/4
         }
         eatingContainer?.stop()
+        shulkerContainer?.stop()
         throwPlayersAway(canBreakBlockSphere.players.findAll {
             it.gameMode in [GameMode.SURVIVAL,GameMode.ADVENTURE] && !it.dead
         })
@@ -110,7 +112,7 @@ class MimicChestAttacker extends MimicChestPart{
             it.gameMode in [GameMode.SURVIVAL,GameMode.ADVENTURE] && !it.dead
         }
         if (playersAroundChest.size() > 0){
-            def rnd = Math.floor(Math.random()*4)
+            def rnd = Math.floor(Math.random()*5)
             switch (rnd){
                 case 0:
                     attack_barfZombie()
@@ -124,6 +126,9 @@ class MimicChestAttacker extends MimicChestPart{
                 case 3:
                     attack_tongue(playersAroundChest.rnd())
                     break;
+                case 4:
+                    attack_shulker(2)
+                    break;
             }
             return
         }
@@ -133,7 +138,7 @@ class MimicChestAttacker extends MimicChestPart{
             return
         }
 
-        def rnd = Math.floor(Math.random()*5)
+        def rnd = Math.floor(Math.random()*6)
         switch (rnd){
             case 0:
                 attack_launchFireball(target)
@@ -149,6 +154,9 @@ class MimicChestAttacker extends MimicChestPart{
                 break;
             case 4:
                 attack_tongue(target)
+                break;
+            case 5:
+                attack_shulker(5)
                 break;
         }
 
@@ -195,6 +203,16 @@ class MimicChestAttacker extends MimicChestPart{
         def eatingPlayerProcess = { Player target, int locIndex ->
             if (Material.SHIELD in [target.hand.type,target.inventory.itemInOffHand.type] && target.blocking) {
                 target.sound(Sound.BLOCK_ANVIL_LAND)
+                def shieldItem = player.hand.type == Material.SHIELD ? player.hand : player.inventory.itemInOffHand
+                if (shieldItem.durability >= Material.SHIELD.maxDurability-100) {
+                    if (player.hand.type == Material.SHIELD) {
+                        player.hand = null
+                    } else {
+                        player.inventory.itemInOffHand = null
+                    }
+                } else {
+                  shieldItem.durability += 100;
+                }
                 eatingContainer.stop()
                 closeChest()
                 return ;
@@ -302,6 +320,31 @@ class MimicChestAttacker extends MimicChestPart{
         }
     }
 
+    private TriggerContainer shulkerContainer;
+    private void attack_shulker(int bulletCount){ // DONE
+        openChest()
+        shulkerContainer = attackContainer.generator();
+        shulkerContainer.stopHook {
+            closeChest()
+            shulkerContainer.timeout(attackDelay,this.&attack)
+        }
+        shulkerContainer.timeout(5){
+            shulkerContainer.interval(10){ int i, def interval ->
+                def target = getRandomTarget();
+                if (!target || i >= bulletCount) {
+                    closeChest()
+                    shulkerContainer.timeout(attackDelay,this.&attack)
+                    interval.stop();
+                    shulkerContainer = null;
+                    return
+                }
+                if (!target.isOnline() || attackLocation.distance(target.loc) > scanRadius) return;
+                def bullet = attackLocation.spawn(ShulkerBullet)as ShulkerBullet;
+                mount.sound(Sound.ENTITY_PLAYER_BURP)
+                bullet.setTarget(target)
+            }
+        }
+    }
 
     private void attack_launchArrow(Player target){ // DONE
         openChest()
@@ -372,22 +415,23 @@ class MimicChestAttacker extends MimicChestPart{
             PotionEffectType.SLOW_DIGGING,PotionEffectType.WITHER,PotionEffectType.WITHER,PotionEffectType.WITHER
     ]
 
-//    private void attack_barfPotion(Player target){
-//        openChest()
-//        triggerContainer.timeout(5){
-//            closeChest()
-//            attackContainer.timeout(attackDelay,this.&attack)
-//
-//            mount.sound(Sound.ENTITY_PLAYER_BURP)
-//            def potion = attackLocation.spawn(ThrownPotion) as ThrownPotion
-//            def itemPotion = new ItemStack(Material.SPLASH_POTION)
-//            PotionMeta meta = itemPotion.itemMeta as PotionMeta
-//            meta.addCustomEffect(new PotionEffect(badEffects.rnd(),Math.random()*100+60 as int,0),true)
-//            itemPotion.itemMeta = meta
-//            potion.setItem(itemPotion)
-//            potion.setVelocity((getPlayerMiddle(target)-potion.loc))
-//        }
-//    }
+    private void attack_barfPotion(Player target){
+        openChest()
+        triggerContainer.timeout(5){
+            closeChest()
+            attackContainer.timeout(attackDelay,this.&attack)
+
+            mount.sound(Sound.ENTITY_PLAYER_BURP)
+            def potion = attackLocation.spawn(ThrownPotion) as ThrownPotion
+            def itemPotion = new ItemStack(Material.SPLASH_POTION)
+            PotionMeta meta = itemPotion.itemMeta as PotionMeta
+            meta.basePotionData.
+            meta.addCustomEffect(new PotionEffect(badEffects.rnd(),Math.random()*100+60 as int,0),true)
+            itemPotion.itemMeta = meta
+            potion.setItem(itemPotion)
+            potion.setVelocity((getPlayerMiddle(target)-potion.loc))
+        }
+    }
 
     private void attack_barfTNT(Player target){ // DONE
         openChest()
