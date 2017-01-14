@@ -17,12 +17,14 @@ import org.bukkit.inventory.meta.SkullMeta
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.util.Vector
+import ru.dpohvar.varscript.trigger.BukkitIntervalTrigger
 import ru.dpohvar.varscript.trigger.TriggerContainer
 
 class MimicChestEater extends MimicChestPart{
     private final Inventory inventory
     private final Location teleportLocation
-    private TriggerContainer eatingContainer
+    private TriggerContainer eatingContainer;
+    private BukkitIntervalTrigger eaterProcess;
     private boolean isOpen = false;
     private double eatItemChance = 0.5;
 
@@ -54,7 +56,7 @@ class MimicChestEater extends MimicChestPart{
         awakener.setAllowFlight(true)
 
 
-        eatingContainer.interval(20){ // 1 second
+        eaterProcess = eatingContainer.interval(20){ // 1 second
             awakener.damage(0.5)
             if (Math.random() < eatItemChance ){
                 eatPlayerItem()
@@ -69,6 +71,7 @@ class MimicChestEater extends MimicChestPart{
         eatingContainer.listen(EntityDamageByEntityEvent, this.&onPlayerAttack)
 
         eatingContainer.interval(1){
+            awakener.setAllowFlight(true)
             awakener.setFlying(true)
         }
 
@@ -108,24 +111,20 @@ class MimicChestEater extends MimicChestPart{
     }
 
     private void processAllergy(){
-        def items = inventory.contents;
-        def i = 0;
+        def items = inventory.contents.findAll {it};
         inventory.clear()
-        def allergyContainer = eatingContainer.generator();
-        allergyContainer.interval(1) {
+        eaterProcess.stop();
+        eatingContainer.interval(2) { int i ->
             if (i >= items.size()) {
-                allergyContainer.stop();
                 MimicChestService.instance.destroyMimic(block,false)
+                if (health != null) {
+                    def attacker = MimicChestService.instance.createNewAttacker(block)
+                    attacker.health = health
+                }
+                return;
             }
             def entity = mount.spawn(items[i])
             barfEntity(entity);
-            i++;
-        }
-
-        items.each {
-            inventory.remove(it)
-            def item = mount.spawn(it);
-            barfEntity(item)
         }
     }
 
