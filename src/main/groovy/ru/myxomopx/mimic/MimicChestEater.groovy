@@ -107,6 +107,28 @@ class MimicChestEater extends MimicChestPart{
         eatItem(itemStack)
     }
 
+    private void processAllergy(){
+        def items = inventory.contents;
+        def i = 0;
+        inventory.clear()
+        def allergyContainer = eatingContainer.generator();
+        allergyContainer.interval(1) {
+            if (i >= items.size()) {
+                allergyContainer.stop();
+                MimicChestService.instance.destroyMimic(block,false)
+            }
+            def entity = mount.spawn(items[i])
+            barfEntity(entity);
+            i++;
+        }
+
+        items.each {
+            inventory.remove(it)
+            def item = mount.spawn(it);
+            barfEntity(item)
+        }
+    }
+
     private void onInvClick(InventoryClickEvent event){
         if (event.whoClicked == eatenPlayer) {
             event.cancelled = true
@@ -130,7 +152,6 @@ class MimicChestEater extends MimicChestPart{
         if(event.entity != eatenPlayer) return
         List<ItemStack> items = event.drops.clone() as List<ItemStack>
         event.drops.clear()
-        println("ITEMS: ${items}")
         items.each {eatItem(it)}
         def skull = mount.spawn(new ItemStack(Material.SKULL_ITEM))
         barfEntity(skull)
@@ -160,18 +181,21 @@ class MimicChestEater extends MimicChestPart{
     }
 
     private void eatItem(ItemStack itemStack){
+        if (itemStack.type in [Material.RAW_FISH,Material.COOKED_FISH]) {
+            processAllergy()
+            return;
+        }
         if (inventory.firstEmpty() == -1){
             def item = mount.spawn(itemStack)
             barfEntity(item)
         } else {
             inventory.addItem(itemStack)
-            mount.world.playSound(mount.loc,Sound.EAT,1,1);
+            mount.world.playSound(mount.loc,Sound.ENTITY_GENERIC_EAT,1,1);
         }
     }
 
     private void barfEntity(Entity entity){
         if (entity == null) {
-            print("BARFING NULL!!!")
             return
         }
         entity >> mount; // TP entity to mount
@@ -200,7 +224,7 @@ class MimicChestEater extends MimicChestPart{
 
 
     private static void playBurpSound(Location loc){
-        loc.world.playSound(loc,Sound.BURP,1,1);
+        loc.world.playSound(loc,Sound.ENTITY_PLAYER_BURP,1,1);
     }
 
     public boolean isOpen(){
@@ -225,7 +249,7 @@ class MimicChestEater extends MimicChestPart{
     private void generatePlayerHead(Player player) {
         if (!fakeInventory) fakeInventory = Bukkit.createInventory(chest,9)
         ItemStack itemStack = new ItemStack(Material.SKULL_ITEM,1,3 as short)
-        SkullMeta meta = itemStack.itemMeta;
+        def meta = itemStack.itemMeta as SkullMeta;
         meta.owner = player.name
         meta.displayName = "Mimic's head!"
         itemStack.itemMeta = meta

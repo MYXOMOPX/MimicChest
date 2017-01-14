@@ -24,7 +24,8 @@ public class MimicUtils {
     private static RefConstructor nPacketPlayOutBlockAction = cPacketPlayOutBlockAction.getConstructor(cBlockPosition,cNMSBlock,int,int)
     private static RefClass cPacketPlayOutEntityEquipment = getRefClass("{nms}.PacketPlayOutEntityEquipment")
     private static RefClass cNMSItemStack = getRefClass("{nms}.ItemStack")
-    private static RefConstructor nPacketPlayOutEntityEquipment = cPacketPlayOutEntityEquipment.getConstructor(int,int,cNMSItemStack)
+    private static RefClass cEnumItemSlot = getRefClass("{nms}.EnumItemSlot")
+    private static RefConstructor nPacketPlayOutEntityEquipment = cPacketPlayOutEntityEquipment.getConstructor(int,cEnumItemSlot,cNMSItemStack)
     private static RefMethod mGetById = cNMSBlock.findMethodByName("getById")
     private static RefClass cPacketPlayOutWorldParticles = getRefClass("{nms}.PacketPlayOutWorldParticles")
     private static RefClass cEnumParticle = getRefClass("{nms}.EnumParticle")
@@ -38,7 +39,7 @@ public class MimicUtils {
         def nmsBlock = mGetById.call(block.typeId)
         def packet = nPacketPlayOutBlockAction.create(blockPosition,nmsBlock,1,1)
         broadcastPacket(packet)
-        if (!silent)block.world.playSound(block.loc, Sound.CHEST_OPEN,1,1)
+        if (!silent)block.world.playSound(block.loc, Sound.BLOCK_CHEST_OPEN,1,1)
     }
 
     public static void closeChest(Block block, boolean silent=false){
@@ -47,7 +48,7 @@ public class MimicUtils {
         def nmsBlock = mGetById.call(block.typeId)
         def packet = nPacketPlayOutBlockAction.create(blockPosition,nmsBlock,1,0)
         broadcastPacket(packet)
-        if (!silent)block.world.playSound(block.loc, Sound.CHEST_CLOSE,1,1)
+        if (!silent)block.world.playSound(block.loc, Sound.BLOCK_CHEST_CLOSE,1,1)
     }
 
     private static broadcastPacket(def packet, Player ... players){
@@ -57,23 +58,25 @@ public class MimicUtils {
     }
 
     public static void sendFakePlayerEquipment(Player player, ItemStack itemStack){
-        sendPlayerEquipment(player,itemStack,4)
-        sendPlayerEquipment(player,null,0)
-        sendPlayerEquipment(player,null,1)
-        sendPlayerEquipment(player,null,2)
-        sendPlayerEquipment(player,null,3)
+        sendPlayerEquipment(player,itemStack,"HEAD")
+        sendPlayerEquipment(player,null,"MAINHAND")
+        sendPlayerEquipment(player,null,"OFFHAND")
+        sendPlayerEquipment(player,null,"FEET")
+        sendPlayerEquipment(player,null,"LEGS")
+        sendPlayerEquipment(player,null,"CHEST")
     }
 
     public static void sendRealPlayerEquipment(Player player){
-        sendPlayerEquipment(player,player.helmet,4)
-        sendPlayerEquipment(player,player.hand,0)
-        sendPlayerEquipment(player,player.boots,1)
-        sendPlayerEquipment(player,player.legs,2)
-        sendPlayerEquipment(player,player.armor,3)
+        sendPlayerEquipment(player,player.helmet,"HEAD")
+        sendPlayerEquipment(player,player.hand,"MAINHAND")
+        sendPlayerEquipment(player,player.inventory.itemInOffHand,"OFFHAND")
+        sendPlayerEquipment(player,player.boots,"FEET")
+        sendPlayerEquipment(player,player.legs,"LEGS")
+        sendPlayerEquipment(player,player.armor,"CHEST")
     }
 
-    private static void sendPlayerEquipment(Player player, ItemStack itemStack, int slot){
-        def packet = nPacketPlayOutEntityEquipment.create(player.id as int,slot as int,ItemStackUtils.itemStackUtils.createNmsItemStack(itemStack))
+    private static void sendPlayerEquipment(Player player, ItemStack itemStack, String slot){
+        def packet = nPacketPlayOutEntityEquipment.create(player.id as int,cEnumItemSlot.getRealClass().valueOf(slot),ItemStackUtils.itemStackUtils.createNmsItemStack(itemStack))
         broadcastPacket(packet,player)
     }
 

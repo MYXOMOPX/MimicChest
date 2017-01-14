@@ -1,12 +1,10 @@
 package ru.myxomopx.mimic
 
-import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.block.Block
 import org.bukkit.block.Chest
 import org.bukkit.entity.Player
-import org.bukkit.event.Cancellable
 import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.block.BlockExplodeEvent
@@ -211,7 +209,7 @@ class MimicChestService {
     }
 
     public static def getVersion(){
-        return 1.2
+        return "1.2.1"
     }
 
 }
