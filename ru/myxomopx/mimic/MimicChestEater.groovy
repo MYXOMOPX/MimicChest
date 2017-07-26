@@ -27,7 +27,6 @@ class MimicChestEater extends MimicChestPart{
     private boolean isOpen = false;
     private double eatItemChance = 0.5;
 
-    private static final allergyMaterial = Material.MAGMA_CREAM;
 
     private Player eatenPlayer
     private GameMode eatenPlayerGameMode;
@@ -163,7 +162,7 @@ class MimicChestEater extends MimicChestPart{
     }
 
     private void eatItem(ItemStack itemStack){
-        if (itemStack.type == allergyMaterial) {
+        if (itemStack.type in [Material.RAW_FISH,Material.COOKED_FISH]) {
             startAllergy()
             return
         }
@@ -172,18 +171,18 @@ class MimicChestEater extends MimicChestPart{
             barfEntity(item)
         } else {
             inventory.addItem(itemStack)
-            mount.world.playSound(mount.loc,Sound.ENTITY_GENERIC_EAT,1,1);
+            mount.world.playSound(mount.loc,Sound.EAT,1,1)
         }
     }
 
     private startAllergy(){
-        isAllergy = true;
+        isAllergy = true
         eatingContainer.stop()
         MimicUtils.openChest(block,true)
-        def time = 0;
+        def time = 0
         if (eatenPlayer) triggerContainer.timeout(++time+5){
             playBurpSound(mount)
-            eatenPlayer >> mount;
+            eatenPlayer >> mount
             eatenPlayer.setVelocity(barfVector*0.5)
             eatenPlayer.allowFlight = eatenPlayerAllowedFly
             eatenPlayer.gameMode = eatenPlayerGameMode
@@ -191,14 +190,14 @@ class MimicChestEater extends MimicChestPart{
                 eatenPlayer.removePotionEffect(it.type)
             }
             MimicUtils.sendRealPlayerEquipment(eatenPlayer)
-            eatenPlayer = null;
+            eatenPlayer = null
         }
         def items = (block.state as Chest).inventory.findAll {it}
         (block.state as Chest).inventory.clear()
         items.each { itemStack ->
             triggerContainer.timeout(++time+5){
                 def item = mount.spawn(itemStack)
-                item >> mount;
+                item >> mount
                 playBurpSound(mount)
                 item.setVelocity(barfVector*0.5)
             }
@@ -230,7 +229,7 @@ class MimicChestEater extends MimicChestPart{
     }
 
     private Vector getBarfVector(){
-        def data = block.data;
+        def data = block.data
         switch (data){
             case 4:
                 return new Vector(-1, Math.random()*0.3, Math.random()*0.6-0.3)
@@ -246,7 +245,7 @@ class MimicChestEater extends MimicChestPart{
 
 
     private static void playBurpSound(Location loc){
-        loc.world.playSound(loc,Sound.ENTITY_PLAYER_BURP,1,1);
+        loc.world.playSound(loc,Sound.BURP,1,1);
     }
 
     public boolean isOpen(){

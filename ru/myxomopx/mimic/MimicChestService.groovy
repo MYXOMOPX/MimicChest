@@ -214,8 +214,4 @@ class MimicChestService {
         return instance
     }
 
-    public static def getVersion(){
-        return 1.2
-    }
-
 }

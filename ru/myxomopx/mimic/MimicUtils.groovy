@@ -1,15 +1,5 @@
 package ru.myxomopx.mimic
 
-import net.minecraft.server.v1_9_R1.BlockPosition as NMS_BlockPosition
-import net.minecraft.server.v1_9_R1.Block as NMS_Block
-import net.minecraft.server.v1_9_R1.PacketPlayOutBlockAction as NMS_PacketPlayOutBlockAction
-import net.minecraft.server.v1_9_R1.PacketPlayOutEntityEquipment as NMS_PacketPlayOutEntityEquipment
-import net.minecraft.server.v1_9_R1.EnumItemSlot as NMS_EnumItemSlot
-import net.minecraft.server.v1_9_R1.EnumParticle as NMS_EnumParticle
-import net.minecraft.server.v1_9_R1.PacketPlayOutWorldParticles as NMS_PacketPlayOutWorldParticles
-
-import org.bukkit.craftbukkit.v1_9_R1.inventory.CraftItemStack as CB_CraftItemStack
-
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
@@ -18,61 +8,72 @@ import org.bukkit.World
 import org.bukkit.block.Block
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
+import ru.dpohvar.varscript.utils.ItemStackUtils
+import ru.dpohvar.varscript.utils.ReflectionUtils.RefClass
+import ru.dpohvar.varscript.utils.ReflectionUtils.RefConstructor
+import ru.dpohvar.varscript.utils.ReflectionUtils.RefMethod
 import org.bukkit.util.Vector
 
+import static ru.dpohvar.varscript.utils.ReflectionUtils.getRefClass
 
 public class MimicUtils {
+    private static RefClass cBlockPosition = getRefClass("{nms}.BlockPosition")
+    private static RefConstructor nBlockPosition = cBlockPosition.getConstructor(int,int,int)
+    private static RefClass cPacketPlayOutBlockAction = getRefClass("{nms}.PacketPlayOutBlockAction")
+    private static RefClass cNMSBlock = getRefClass("{nms}.Block")
+    private static RefConstructor nPacketPlayOutBlockAction = cPacketPlayOutBlockAction.getConstructor(cBlockPosition,cNMSBlock,int,int)
+    private static RefClass cPacketPlayOutEntityEquipment = getRefClass("{nms}.PacketPlayOutEntityEquipment")
+    private static RefClass cNMSItemStack = getRefClass("{nms}.ItemStack")
+    private static RefConstructor nPacketPlayOutEntityEquipment = cPacketPlayOutEntityEquipment.getConstructor(int,int,cNMSItemStack)
+    private static RefMethod mGetById = cNMSBlock.findMethodByName("getById")
+    private static RefClass cPacketPlayOutWorldParticles = getRefClass("{nms}.PacketPlayOutWorldParticles")
+    private static RefClass cEnumParticle = getRefClass("{nms}.EnumParticle")
+    private static RefConstructor nPacketPlayOutWorldParticles = cPacketPlayOutWorldParticles.findConstructor(11)
 
     static def chestTypes = [Material.CHEST,Material.TRAPPED_CHEST]
 
     public static void openChest(Block block, boolean silent=false){
         if (!chestTypes.contains(block.type)) return
-
-        def blockPosition = new NMS_BlockPosition(block.x as int,block.y as int,block.z as int)
-        def nmsBlock = NMS_Block.getById(block.typeId)
-        def packet = new NMS_PacketPlayOutBlockAction(blockPosition,nmsBlock,1,1)
+        def blockPosition = nBlockPosition.create(block.x as int,block.y as int,block.z as int)
+        def nmsBlock = mGetById.call(block.typeId)
+        def packet = nPacketPlayOutBlockAction.create(blockPosition,nmsBlock,1,1)
         broadcastPacket(packet)
-        if (!silent) block.world.playSound(block.loc, Sound.BLOCK_CHEST_OPEN, 1, 1)
+        if (!silent)block.world.playSound(block.loc, Sound.CHEST_OPEN,1,1)
     }
 
     public static void closeChest(Block block, boolean silent=false){
         if (!chestTypes.contains(block.type)) return
-        def blockPosition = new NMS_BlockPosition(block.x as int,block.y as int,block.z as int)
-        def nmsBlock = NMS_Block.getById(block.typeId)
-        def packet = new NMS_PacketPlayOutBlockAction(blockPosition,nmsBlock,1,0)
+        def blockPosition = nBlockPosition.create(block.x as int,block.y as int,block.z as int)
+        def nmsBlock = mGetById.call(block.typeId)
+        def packet = nPacketPlayOutBlockAction.create(blockPosition,nmsBlock,1,0)
         broadcastPacket(packet)
-        if (!silent) block.world.playSound(block.loc, Sound.BLOCK_CHEST_CLOSE, 1 ,1)
+        if (!silent)block.world.playSound(block.loc, Sound.CHEST_CLOSE,1,1)
     }
 
-    private static broadcastPacket(def packet, Player ... playersIgnore){
-        Bukkit.getOnlinePlayers().findAll {!(it in playersIgnore)}.each {
+    private static broadcastPacket(def packet, Player ... players){
+        Bukkit.getOnlinePlayers().findAll {!(it in players)}.each {
             it.handle.playerConnection.sendPacket(packet)
         }
     }
 
     public static void sendFakePlayerEquipment(Player player, ItemStack itemStack){
-        sendPlayerEquipment(player,itemStack,NMS_EnumItemSlot.HEAD)
-        sendPlayerEquipment(player,null,NMS_EnumItemSlot.MAINHAND)
-        sendPlayerEquipment(player,null,NMS_EnumItemSlot.OFFHAND)
-        sendPlayerEquipment(player,null,NMS_EnumItemSlot.LEGS)
-        sendPlayerEquipment(player,null,NMS_EnumItemSlot.CHEST)
-        sendPlayerEquipment(player,null,NMS_EnumItemSlot.FEET)
+        sendPlayerEquipment(player,itemStack,4)
+        sendPlayerEquipment(player,null,0)
+        sendPlayerEquipment(player,null,1)
+        sendPlayerEquipment(player,null,2)
+        sendPlayerEquipment(player,null,3)
     }
 
     public static void sendRealPlayerEquipment(Player player){
-        sendPlayerEquipment(player,player.helmet,NMS_EnumItemSlot.HEAD)
-        sendPlayerEquipment(player,player.hand,NMS_EnumItemSlot.MAINHAND)
-        sendPlayerEquipment(player,player.inventory.itemInOffHand,NMS_EnumItemSlot.OFFHAND)
-        sendPlayerEquipment(player,player.boots,NMS_EnumItemSlot.FEET)
-        sendPlayerEquipment(player,player.legs,NMS_EnumItemSlot.LEGS)
-        sendPlayerEquipment(player,player.armor,NMS_EnumItemSlot.CHEST)
+        sendPlayerEquipment(player,player.helmet,4)
+        sendPlayerEquipment(player,player.hand,0)
+        sendPlayerEquipment(player,player.boots,1)
+        sendPlayerEquipment(player,player.legs,2)
+        sendPlayerEquipment(player,player.armor,3)
     }
 
-    private static void sendPlayerEquipment(Player player, ItemStack itemStack, NMS_EnumItemSlot slot){
-        def packet = new NMS_PacketPlayOutEntityEquipment(
-                player.id as int,slot,
-                itemStack?CB_CraftItemStack.asNMSCopy(itemStack):null
-        )
+    private static void sendPlayerEquipment(Player player, ItemStack itemStack, int slot){
+        def packet = nPacketPlayOutEntityEquipment.create(player.id as int,slot as int,ItemStackUtils.itemStackUtils.createNmsItemStack(itemStack))
         broadcastPacket(packet,player)
     }
 
@@ -91,8 +92,8 @@ public class MimicUtils {
     }
 
     public static void playParticle(Location location, String particleName, Vector dif, float speed, int count){
-        def particle = NMS_EnumParticle.valueOf(particleName)
-        def packet = new NMS_PacketPlayOutWorldParticles(particle,true,
+        def particle = cEnumParticle.realClass.valueOf(particleName)
+        def packet = nPacketPlayOutWorldParticles.create(particle,true,
             location.x as float, location.y as float, location.z as float,
             dif.x as float, dif.y as float, dif.z as float,
             speed as float, count as int, new int[0]

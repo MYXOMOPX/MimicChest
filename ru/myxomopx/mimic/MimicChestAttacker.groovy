@@ -38,7 +38,7 @@ class MimicChestAttacker extends MimicChestPart{
         attackDelay = maxAttackDelay
         attackLocation = block.loc.add(0.5,1.2,0.5)
         attackContainer = container.generator()
-        mount.world.playSound(mount,Sound.ENTITY_GHAST_SCREAM  ,2,1)
+        mount.world.playSound(mount,Sound.GHAST_SCREAM  ,2,1)
         scanSphere = mount.sphere(scanRadius)
         canBreakBlockSphere = mount.sphere(5)
 
@@ -62,7 +62,7 @@ class MimicChestAttacker extends MimicChestPart{
 
     public void onTakeDamage(double damage){
         health -= damage
-        mount.world.playSound(mount,Sound.ENTITY_WITHER_HURT,2,0.7 as float)
+        mount.world.playSound(mount,Sound.WITHER_HURT,2,0.7 as float)
 
         def dmg = getTakenDamage()
         if (dmg < 10){
@@ -239,7 +239,7 @@ class MimicChestAttacker extends MimicChestPart{
                                 offHand.durability += tongueShieldDamage
                             }
                         }
-                        player.sound(Sound.ENTITY_ITEM_BREAK, 1, 1);
+                        player.sound(Sound.ITEM_BREAK, 1, 1);
                     } else {
                         eatingPlayerProcess(players.rnd(),i)
                     }
@@ -339,7 +339,7 @@ class MimicChestAttacker extends MimicChestPart{
             MimicUtils.getCircle(mount,1.5,16).each {
                  MimicUtils.playParticle(it,"CLOUD",new Vector(),0.5 as float,5)
             }
-            mount.sound(Sound.ENTITY_BAT_TAKEOFF,1,0.1)
+            mount.sound(Sound.BAT_TAKEOFF,1,0.1)
             targets.each {
                 def vel = (it.loc-mount.loc).normalize()*2
                 vel.setY(0.5)
@@ -356,7 +356,7 @@ class MimicChestAttacker extends MimicChestPart{
         entity >> mount; // TP entity to mount
         openChest(true)
         triggerContainer.timeout(5){
-            mount.sound(Sound.ENTITY_PLAYER_BURP)
+            mount.sound(Sound.BURP)
             entity.setVelocity(barfVector*power)
             closeChest(true)
         }
@@ -395,7 +395,7 @@ class MimicChestAttacker extends MimicChestPart{
             closeChest()
             attackContainer.timeout(attackDelay,this.&attack)
 
-            mount.sound(Sound.ENTITY_PLAYER_BURP)
+            mount.sound(Sound.BURP)
             def tnt = attackLocation.spawn(TNTPrimed)
             tnt.setIsIncendiary(true)
             tnt.yield = 2.2
@@ -460,7 +460,7 @@ class MimicChestAttacker extends MimicChestPart{
     void onDestroy(boolean becauseDestroyed) {
         destroyed = true
         if (becauseDestroyed) {
-            mount.sound(Sound.ENTITY_ZOMBIE_HORSE_DEATH,1,1)
+            mount.sound(Sound.HORSE_ZOMBIE_DEATH,1,1)
             List<ItemStack> items = chest.inventory.contents;
             chest.inventory.clear()
             items.remove(0)
